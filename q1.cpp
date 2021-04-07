@@ -1,12 +1,14 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <omp.h>
-#include<bits/stdc++.h>
-using namespace std;
+#include<iostream>
+#include<random>
 
-#define N 1000
+#define N 10000
 
-double A[N][N], B[N][N], C[N][N], a[N][N], l[N][N], u[N][N];
+float A[N][N], B[N][N], C[N][N], a[N][N], l[N][N], u[N][N];
 
-void decomposition(double (&a)[N][N], double (&l)[N][N], double (&u)[N][N], int size){
+void decomposition(float (&a)[N][N], float (&l)[N][N], float (&u)[N][N], int size){
     #pragma omp parallel shared(a,l,u)
     for (int i=0; i<size; i++){
         #pragma omp for schedule(static)
@@ -43,17 +45,19 @@ void decomposition(double (&a)[N][N], double (&l)[N][N], double (&u)[N][N], int 
     }
 }
 
-int main() 
-{
+void initialize(){
     int i,j,k;
-    srand(1);
-    omp_set_num_threads(omp_get_num_procs());
     for (i= 0; i< N; i++){
-        for (j= 0; j< N; j++){
-            A[i][j] = rand() % (N);
-            B[i][j] = rand() % (N);
-	    } 
-    }  
+            for (j= 0; j< N; j++){
+                A[i][j] = rand() % (N);
+                B[i][j] = rand() % (N);
+            } 
+        } 
+    
+    }
+
+void multiplication(){
+    int i,j,k;
     #pragma omp parallel for private(i,j,k) shared(A,B,C)
     for (i = 0; i < N; ++i) {
         for (j = 0; j < N; ++j) {
@@ -62,6 +66,15 @@ int main()
             }
         }
     }
+}
+
+int main() 
+{
+    int i,j,k;
+    srand(1);
+    initialize();
+    omp_set_num_threads(omp_get_num_procs()); 
+    multiplication();
     // for (int m=0; m<N; m++){
     //     for (int n=0; n<N; n++){
     //         std::cout<<C[m][n]<<" ";
@@ -69,7 +82,7 @@ int main()
     //     std::cout<<"\n";
     // }
     std::cout<<"\n";
-    std::cout<<"let's decompose the matrix now:"<<"\n";
+    // std::cout<<"let's decompose the matrix now:"<<"\n";
     decomposition(A,l,u, N);
     // for (int m=0; m<N; m++){
     //     for (int n=0; n<N; n++){

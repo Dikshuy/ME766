@@ -3,7 +3,7 @@
 
 using namespace std;    
 
-#define N 100
+#define N 5000
 #define MASTER 0   
 #define MASTER_TASK 1
 #define WORKER_TASK 2
@@ -63,6 +63,7 @@ void mpi_decomposition(double (&a)[N][N], double (&l)[N][N], double (&u)[N][N], 
             }
             std::cout<<"\n";
         }
+        std::cout<<"done";
     }
     // MPI_Finalize();
 }
@@ -86,24 +87,24 @@ void mpi_matrix_multiplication(int argc, char** argv, double (&A)[N][N], double 
                 
             } 
         }
-        std::cout<<"matrix A"<<"\n";
-        for (int m=0; m<N; m++){
-            for (int n=0; n<N; n++){
-                std::cout<<A[m][n]<<" ";
-            }
-            std::cout<<"\n";
-        }
-        std::cout<<"\n"<<"matrix B"<<"\n";
-        for (int m=0; m<N; m++){
-            for (int n=0; n<N; n++){
-                std::cout<<B[m][n]<<" ";
-            }
-            std::cout<<"\n";
-        }
+        // std::cout<<"matrix A"<<"\n";
+        // for (int m=0; m<N; m++){
+        //     for (int n=0; n<N; n++){
+        //         std::cout<<A[m][n]<<" ";
+        //     }
+        //     std::cout<<"\n";
+        // }
+        // std::cout<<"\n"<<"matrix B"<<"\n";
+        // for (int m=0; m<N; m++){
+        //     for (int n=0; n<N; n++){
+        //         std::cout<<B[m][n]<<" ";
+        //     }
+        //     std::cout<<"\n";
+        // }
         averow = N/workers;
         extra = N%workers;
-        offset = MASTER_TASK;
-        mtype = 1;
+        offset = 0;
+        mtype = MASTER_TASK;
         for (dest = 1; dest <= workers; dest++){
             rows = (dest <= extra) ? averow+1 : averow;
             MPI_Send(&offset, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
@@ -112,7 +113,7 @@ void mpi_matrix_multiplication(int argc, char** argv, double (&A)[N][N], double 
             MPI_Send(&B, N*N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
             offset = offset + rows;
         }
-        std::cout<<"message sent to worker"<<"\n";
+        // std::cout<<"message sent to worker"<<"\n";
 
         mtype = WORKER_TASK;
         for (int i=1; i<=workers; i++){
@@ -121,14 +122,14 @@ void mpi_matrix_multiplication(int argc, char** argv, double (&A)[N][N], double 
             MPI_Recv(&rows, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
             MPI_Recv(&C[offset][0], rows*N, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &status);
         }
-        std::cout<<"message received by master"<<"\n";
-        for (int m=0; m<N; m++){
-            for (int n=0; n<N; n++){
-                std::cout<<C[m][n]<<" ";
-            }
-            std::cout<<"\n";
-        }
-        std::cout<<"let's start matrix decomposition"<<endl;
+        // std::cout<<"message received by master"<<"\n";
+        // for (int m=0; m<N; m++){
+        //     for (int n=0; n<N; n++){
+        //         std::cout<<C[m][n]<<" ";
+        //     }
+        //     std::cout<<"\n";
+        // }
+        // std::cout<<"let's start matrix decomposition"<<endl;
         mpi_decomposition(A,l,u, N);
     }
     if (id > MASTER){
@@ -138,14 +139,13 @@ void mpi_matrix_multiplication(int argc, char** argv, double (&A)[N][N], double 
         MPI_Recv(&A, rows*N, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&B, N*N, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
         // std::cout<<"message received by worker"<<"\n";
-        for(int i=0; i<N; i++){
-            for (int j=0; j<N; j++){
-                C[j][i] = 0.0;
-                for(int k=0; k<N; k++){
-                    C[j][i] += A[j][k]+B[k][i];
-                }
-            }
-        }
+        for (int k=0; k<N; k++)
+         for (int i=0; i<rows; i++)
+         {
+            C[i][k] = 0.0;
+            for (int j=0; j<N; j++)
+               C[i][k] += A[i][j] * B[j][k];
+         }
         mtype = WORKER_TASK;
         MPI_Send(&offset, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
         MPI_Send(&rows, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD);
