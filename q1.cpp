@@ -1,10 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <omp.h>
-#include<iostream>
-#include<random>
+#include<bits/stdc++.h>
 
-#define N 10000
+using namespace std;
+
+#define N 5
 
 float A[N][N], B[N][N], C[N][N], a[N][N], l[N][N], u[N][N];
 
@@ -75,19 +74,20 @@ int main()
     initialize();
     omp_set_num_threads(omp_get_num_procs()); 
     multiplication();
-    // for (int m=0; m<N; m++){
-    //     for (int n=0; n<N; n++){
-    //         std::cout<<C[m][n]<<" ";
-    //     }
-    //     std::cout<<"\n";
-    // }
+    std::cout<<"matrix obtained after multiplication: "<<"\n";
+    for (int m=0; m<N; m++){
+        for (int n=0; n<N; n++){
+            std::cout<<C[m][n]<<" ";
+        }
+        std::cout<<"\n";
+    }
     std::cout<<"\n";
-    // std::cout<<"let's decompose the matrix now:"<<"\n";
-    decomposition(A,l,u, N);
-    // for (int m=0; m<N; m++){
-    //     for (int n=0; n<N; n++){
-    //         std::cout<<u[m][n]<<" ";
-    //     }
-    //     std::cout<<"\n";
-    // }
+    std::cout<<"let's decompose the matrix now:"<<"\n";
+    decomposition(C,l,u, N);
+    for (int m=0; m<N; m++){
+        for (int n=0; n<N; n++){
+            std::cout<<u[m][n]<<" ";
+        }
+        std::cout<<"\n";
+    }
 }
