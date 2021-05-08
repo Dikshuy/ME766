@@ -1,8 +1,8 @@
-#include<bits/stdc++.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
-using namespace std;
-
-#define BLOCK_SIZE = 16;
+#define BLOCK_SIZE 16
 
 __global__ void matrix_multiplication(int *dev_a, int *dev_b, int *dev_c, int n){
     __shared__ int tile_a[BLOCK_SIZE][BLOCK_SIZE];
@@ -10,17 +10,16 @@ __global__ void matrix_multiplication(int *dev_a, int *dev_b, int *dev_c, int n)
 
     int row = blockIdx.y*BLOCK_SIZE + threadIdx.y;
     int col = blockIdx.x*BLOCK_SIZE + threadIdx.x;
-
     int temp = 0;
     int idx;
 
-    for (int i=0; i<gridDim.x; i++){
+    for (int i=0; i<gridDim.x; ++i){
         idx = row*n + i*BLOCK_SIZE + threadIdx.x;
         if (idx >= n*n){
             tile_a[threadIdx.y][threadIdx.x] = 0;
         }
         else{
-            tile_a[threadIdx.y][threadIdx.x] = a[idx];
+            tile_a[threadIdx.y][threadIdx.x] = dev_a[idx];
         }
 
         idx = (i*BLOCK_SIZE + threadIdx.y)*n + col;
@@ -28,10 +27,11 @@ __global__ void matrix_multiplication(int *dev_a, int *dev_b, int *dev_c, int n)
             tile_b[threadIdx.y][threadIdx.x] = 0;
         }
         else{
-            tile_b[threadIdx.y][threadIdx,x] = b[idx];
+            tile_b[threadIdx.y][threadIdx.x] = dev_b[idx];
         }
         __syncthreads();
-        for (int j=0; j<BLOCK_SIZE; j++){
+
+        for (int j=0; j<BLOCK_SIZE; ++j){
             temp += tile_a[threadIdx.y][j]*tile_b[j][threadIdx.x];
         }
         __syncthreads();
@@ -41,22 +41,22 @@ __global__ void matrix_multiplication(int *dev_a, int *dev_b, int *dev_c, int n)
     }
 }
 
-int main(){
+int main(int argc, char const *argv[]){
     int n;
     srand(1);
 
     int *a, *b, *c;
+    n=1024;
     cudaMallocHost((void **) &a, sizeof(int)*n*n);
     cudaMallocHost((void **) &b, sizeof(int)*n*n);
     cudaMallocHost((void **) &c, sizeof(int)*n*n);
 
-    int i,j;
-    for (i= 0; i< N; i++){
-        for (j= 0; j< N; j++){
-            a[i][j] = rand() % (N);
-            b[i][j] = rand() % (N);
-        } 
-    } 
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            a[i * n + j] = rand() % 1024;
+            b[i * n + j] = rand() % 1024;
+        }
+    }
 
     float time_taken;
     cudaEvent_t start, stop;
@@ -79,13 +79,13 @@ int main(){
     dim3 dimGrid(grid_cols, grid_rows);
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
-    matrix_multiplication<<dimGrid, dimBlock>>(dev_a, dev_b, dev_c, n);
+    matrix_multiplication<<<dimGrid, dimBlock>>>(dev_a, dev_b, dev_c, n);
 
     cudaMemcpy(c, dev_c, sizeof(int)*n*n, cudaMemcpyDeviceToHost);
     cudaThreadSynchronize();
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
-    cudaEventElapsedTime(&time_taken start, stop);
+    cudaEventElapsedTime(&time_taken, start, stop);
     printf("Time elapsed on matrix multiplication of %dx%d . %dx%d on GPU: %f ms.\n\n", n, n, n, n, time_taken);
 
     cudaFree(dev_a);
