@@ -1,6 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
+#include<bits/stdc++.h>
+
+using namespace std;
 
 #define BLOCK_SIZE 16
 
@@ -44,17 +44,16 @@ __global__ void matrix_multiplication(int *dev_a, int *dev_b, int *dev_c, int n)
 int main(int argc, char const *argv[]){
     int n;
     srand(1);
-
     int *a, *b, *c;
-    n=1024;
+    n=10000;
     cudaMallocHost((void **) &a, sizeof(int)*n*n);
     cudaMallocHost((void **) &b, sizeof(int)*n*n);
     cudaMallocHost((void **) &c, sizeof(int)*n*n);
 
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            a[i * n + j] = rand() % 1024;
-            b[i * n + j] = rand() % 1024;
+            a[i * n + j] = rand() % n;
+            b[i * n + j] = rand() % n;
         }
     }
 
@@ -86,13 +85,14 @@ int main(int argc, char const *argv[]){
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time_taken, start, stop);
-    printf("Time elapsed on matrix multiplication of %dx%d . %dx%d on GPU: %f ms.\n\n", n, n, n, n, time_taken);
 
-    cudaFree(dev_a);
-    cudaFree(dev_b);
-    cudaFree(dev_c);
+    printf("Time elapsed in matrix multiplication on GPU: %f ms.\n",time_taken);
+
     cudaFreeHost(a);
     cudaFreeHost(b);
     cudaFreeHost(c);
+    cudaFree(dev_a);
+    cudaFree(dev_b);
+    cudaFree(dev_c);
     return 0;
 }
